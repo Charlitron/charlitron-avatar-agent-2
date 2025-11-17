@@ -116,12 +116,90 @@
     "react": "https://esm.sh/react@18.3.1",
     "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
     "@google/genai": "https://esm.sh/@google/genai",
-    "@heygen/streaming-avatar": "https://esm.sh/@heygen/streaming-avatar@1.3.1",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/"
   }
 }
 </script>
+  <script>
+    // Crear un mock simple de StreamingAvatar mientras se implementa la conexión real
+    window.StreamingAvatarMock = class {
+      constructor(config) {
+        this.config = config;
+        this.eventHandlers = {};
+      }
+      on(event, handler) {
+        this.eventHandlers[event] = handler;
+      }
+      async start(options) {
+        console.log('🎭 Avatar Mock iniciado');
+        
+        // Simular un stream de video con una imagen de avatar
+        const canvas = document.createElement('canvas');
+        canvas.width = 640;
+        canvas.height = 480;
+        const ctx = canvas.getContext('2d');
+        
+        // Dibujar fondo con gradiente
+        const gradient = ctx.createLinearGradient(0, 0, 640, 480);
+        gradient.addColorStop(0, '#667eea');
+        gradient.addColorStop(1, '#764ba2');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 640, 480);
+        
+        // Dibujar círculo para el avatar
+        ctx.beginPath();
+        ctx.arc(320, 200, 80, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        
+        // Texto Elena
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 48px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('ELENA', 320, 340);
+        ctx.font = '24px Arial';
+        ctx.fillText('Asistente Virtual', 320, 380);
+        ctx.fillText('¡Habla conmigo!', 320, 420);
+        
+        // Emoji de micrófono
+        ctx.font = '60px Arial';
+        ctx.fillText('🎤', 320, 220);
+        
+        // Convertir canvas a stream
+        const stream = canvas.captureStream(30);
+        
+        // Emitir el evento de stream
+        setTimeout(() => {
+          if (this.eventHandlers['media.stream']) {
+            this.eventHandlers['media.stream'](stream);
+          }
+          if (this.eventHandlers['session.start']) {
+            this.eventHandlers['session.start']();
+          }
+        }, 500);
+      }
+      async stop() {
+        console.log('🛑 Avatar Mock detenido');
+        if (this.eventHandlers['session.close']) {
+          this.eventHandlers['session.close']();
+        }
+      }
+      async speak(options) {
+        console.log('🗣️ Avatar hablaría:', options.text);
+        // Simular que está hablando por unos segundos
+        return new Promise(resolve => {
+          const duration = Math.min(options.text.length * 50, 5000);
+          setTimeout(resolve, duration);
+        });
+      }
+      get state() {
+        return 'ready';
+      }
+    };
+    // Por ahora usamos el mock hasta que HeyGen SDK funcione
+    window.StreamingAvatar = window.StreamingAvatarMock;
+  </script>
 </head>
   <body class="bg-slate-900">
     <div id="root"></div>

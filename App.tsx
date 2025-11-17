@@ -4,6 +4,7 @@ import Header from './components/Header';
 import Hero from './components/Hero';
 import Contact from './components/Contact';
 import Avatar from './components/Avatar';
+import IntegrationStatus from './components/IntegrationStatus';
 
 const App: React.FC = () => {
   return (
@@ -18,6 +19,7 @@ const App: React.FC = () => {
         </main>
       </div>
       <Avatar />
+      <IntegrationStatus />
     </div>
   );
 };
