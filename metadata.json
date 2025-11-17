@@ -1,0 +1,7 @@
+{
+  "name": "Interfaz de Avatar IA de Charlitron",
+  "description": "Una interfaz web moderna diseñada para mostrar e interactuar con el avatar parlante impulsado por IA de Charlitron para la interacción con el cliente.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
