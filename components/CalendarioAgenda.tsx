@@ -30,6 +30,7 @@ export default function CalendarioAgenda({ onCitaAgendada }: CalendarioAgendaPro
   const [email, setEmail] = useState('')
   const [telefono, setTelefono] = useState('')
   const [servicio, setServicio] = useState('Consultoría Marketing')
+  const [duracion, setDuracion] = useState(1) // Horas que dura el servicio
 
   // Generar próximos 7 días
   const [diasDisponibles, setDiasDisponibles] = useState<string[]>([])
@@ -69,21 +70,19 @@ export default function CalendarioAgenda({ onCitaAgendada }: CalendarioAgendaPro
           setDisponibilidad(resultado.disponibles)
         } else {
           console.error('❌ Error al obtener disponibilidad:', resultado.error)
-          // Fallback: horarios fijos si falla el API
+          // Fallback: horarios fijos si falla el API (cada 1 hora)
           const horariosFallback = []
           for (let h = 9; h < 20; h++) {
             horariosFallback.push(`${h.toString().padStart(2, '0')}:00`)
-            horariosFallback.push(`${h.toString().padStart(2, '0')}:30`)
           }
           setDisponibilidad(horariosFallback)
         }
       } catch (err) {
         console.error('❌ Error consultando disponibilidad:', err)
-        // Fallback
+        // Fallback (cada 1 hora)
         const horariosFallback = []
         for (let h = 9; h < 20; h++) {
           horariosFallback.push(`${h.toString().padStart(2, '0')}:00`)
-          horariosFallback.push(`${h.toString().padStart(2, '0')}:30`)
         }
         setDisponibilidad(horariosFallback)
       } finally {
@@ -103,28 +102,54 @@ export default function CalendarioAgenda({ onCitaAgendada }: CalendarioAgendaPro
     setGuardando(true)
 
     try {
-      // Llamar a Edge Function para agendar (usa la misma que ya tienes)
-      const { data, error } = await supabase.functions.invoke('agendar-cita', {
-        body: {
-          mensaje: `Agendar ${servicio} el ${fechaSeleccionada} a las ${horaSeleccionada}`,
-          userInfo: { nombre, email, telefono }
+      // Guardar directamente en Supabase
+      const { data: citaData, error: citaError } = await supabase
+        .from('citas')
+        .insert([{
+          nombre: nombre,
+          email: email,
+          telefono: telefono,
+          fecha: fechaSeleccionada,
+          hora: horaSeleccionada,
+          motivo: `${servicio} - ${duracion}h`,
+          duracion: duracion,
+          estado: 'pendiente'
+        }])
+        .select()
+
+      if (citaError) throw citaError
+
+      if (citaData && citaData.length > 0) {
+        // Intentar agendar en Google Calendar (opcional, no bloquea si falla)
+        try {
+          await supabase.functions.invoke('agendar-en-google', {
+            body: {
+              nombre,
+              email,
+              telefono,
+              fecha: fechaSeleccionada,
+              hora: horaSeleccionada,
+              servicio,
+              duracion
+            }
+          })
+          console.log('✅ También agendado en Google Calendar')
+        } catch (googleError) {
+          console.warn('⚠️ No se pudo agendar en Google Calendar (opcional):', googleError)
         }
-      })
 
-      if (error) throw error
-
-      if (data.success) {
-        alert('✅ ¡Cita agendada exitosamente!')
+        alert(`✅ ¡Cita agendada exitosamente!\n${servicio} - ${duracion}h\n${fechaSeleccionada} a las ${horaSeleccionada}`)
         
         // Limpiar formulario
         setNombre('')
         setEmail('')
         setTelefono('')
         setHoraSeleccionada('')
+        setDuracion(1)
         
         onCitaAgendada?.()
       } else {
-        alert('❌ Error al agendar: ' + data.error)
+        alert('❌ Error: No se pudo guardar la cita')
       }
     } catch (err) {
       console.error('❌ Error:', err)
@@ -263,12 +288,30 @@ export default function CalendarioAgenda({ onCitaAgendada }: CalendarioAgendaPro
             onChange={(e) => setServicio(e.target.value)}
             className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all"
           >
-            <option value="Consultoría Marketing">Consultoría Marketing</option>
-            <option value="Diseño de Campaña">Diseño de Campaña</option>
-            <option value="Social Media">Social Media</option>
-            <option value="Branding">Branding</option>
-            <option value="SEO/SEM">SEO/SEM</option>
-            <option value="Publicidad Digital">Publicidad Digital</option>
+            <option value="Consultoría Marketing">📊 Consultoría Marketing</option>
+            <option value="Perifoneo">📢 Perifoneo</option>
+            <option value="Volanteo">📄 Volanteo</option>
+            <option value="Activación">🎉 Activación</option>
+            <option value="Producción Visual">🎥 Producción Visual</option>
+            <option value="Otros">⭐ Otros</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-cyan-300 text-sm font-semibold mb-2">
+            ⏱️ Duración del servicio:
+          </label>
+          <select
+            value={duracion}
+            onChange={(e) => setDuracion(Number(e.target.value))}
+            className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all"
+          >
+            <option value={1}>1 hora</option>
+            <option value={2}>2 horas</option>
+            <option value={3}>3 horas</option>
+            <option value={4}>4 horas</option>
+            <option value={5}>5 horas</option>
+            <option value={6}>6 horas</option>
           </select>
         </div>
       </div>

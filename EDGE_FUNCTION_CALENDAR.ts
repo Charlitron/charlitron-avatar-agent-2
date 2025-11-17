@@ -87,18 +87,16 @@ serve(async (req) => {
 
     console.log('🔒 Eventos ocupados:', eventosOcupados)
 
-    // 5. Generar horarios disponibles (9 AM - 8 PM, cada 30 mins)
+    // 5. Generar horarios disponibles (9 AM - 8 PM, cada 1 hora)
     const horariosDisponibles: string[] = []
     const horariosOcupados = new Set(eventosOcupados.map(e => e.inicio))
 
     for (let hora = 9; hora < 20; hora++) {
-      for (let minuto = 0; minuto < 60; minuto += 30) {
-        const horario = `${hora.toString().padStart(2, '0')}:${minuto.toString().padStart(2, '0')}`
-        
-        // Si no está ocupado, agregarlo
-        if (!horariosOcupados.has(horario)) {
-          horariosDisponibles.push(horario)
-        }
+      const horario = `${hora.toString().padStart(2, '0')}:00`
+      
+      // Si no está ocupado, agregarlo
+      if (!horariosOcupados.has(horario)) {
+        horariosDisponibles.push(horario)
       }
     }
 
