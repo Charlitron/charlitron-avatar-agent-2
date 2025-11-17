@@ -3,7 +3,7 @@ import React from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Contact from './components/Contact';
-import AvatarHybrid from './components/AvatarHybrid';
+import AvatarDebug from './components/AvatarDebug';
 import IntegrationStatus from './components/IntegrationStatus';
 
 const App: React.FC = () => {
@@ -18,7 +18,7 @@ const App: React.FC = () => {
           <Contact />
         </main>
       </div>
-      <AvatarHybrid />
+      <AvatarDebug />
       <IntegrationStatus />
     </div>
   );
