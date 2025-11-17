@@ -6,8 +6,8 @@ import StreamingAvatar, {
   VoiceEmotion 
 } from '@heygen/streaming-avatar';
 
-const HEYGEN_TOKEN = 'N2U3YzdmMTQyNmQzNGQ1Y2I3ZjFmY2IwOTc3ZmJiZjAtMTc0MjQ5NzY0OA==';
-const GEMINI_KEY = 'AIzaSyDBgs_zcP8yMbjIgcsV-KV7FfpGhn3E308';
+const HEYGEN_TOKEN = import.meta.env.VITE_HEYGEN_TOKEN || '';
+const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 
 const AvatarSDK: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
