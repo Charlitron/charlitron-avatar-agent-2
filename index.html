@@ -37,6 +37,82 @@
         }
       }
     </script>
+    <style>
+      #avatar-container {
+        z-index: 9999;
+        position: fixed;
+        left: 40px;
+        bottom: 40px;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        border: 3px solid #fff;
+        box-shadow: 0px 8px 24px 0px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease-in-out;
+        overflow: hidden;
+        opacity: 0;
+        visibility: hidden;
+        cursor: pointer;
+        animation: pulseGlow 2.5s infinite ease-in-out;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+      #avatar-container.show {
+        opacity: 1;
+        visibility: visible;
+      }
+      #avatar-container.expand {
+        width: 96%;
+        max-width: 640px;
+        height: 54%;
+        max-height: 360px;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 20px;
+        border: 0;
+        border-radius: 12px;
+        animation: none;
+        box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.5);
+      }
+      @media (min-width: 540px) {
+        #avatar-container.expand {
+          width: calc(400px * 16 / 9);
+          height: 400px;
+        }
+      }
+
+      #avatar-video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      #avatar-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: rgba(0,0,0,0.3);
+        color: white;
+        font-family: sans-serif;
+        text-align: center;
+        padding: 1rem;
+        pointer-events: none;
+        opacity: 1;
+        transition: opacity 0.3s;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      #avatar-container.initialized #avatar-overlay {
+        opacity: 0;
+      }
+      #avatar-container:not(.expand):hover #avatar-overlay {
+        opacity: 1;
+        background: rgba(79, 70, 229, 0.5);
+      }
+    </style>
   <script type="importmap">
 {
   "imports": {
@@ -48,12 +124,12 @@
   }
 }
 </script>
-</head>
+  </head>
   <body class="bg-slate-900">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
     
-    <!-- Avatar de HeyGen con iframe -->
+    <!-- Avatar de HeyGen - iframe que funciona -->
     <script>
       window.addEventListener('DOMContentLoaded', function() {
         !function(window){const host="https://labs.heygen.com",url=host+"/guest/streaming-embed?share=eyJxdWFsaXR5IjoiaGlnaCIsImF2YXRhck5hbWUiOiJFbGVub3JhX0lUX1NpdHRpbmdfcHVibGlj%0D%0AIiwicHJldmlld0ltZyI6Imh0dHBzOi8vZmlsZXMyLmhleWdlbi5haS9hdmF0YXIvdjMvY2JkNGE2%0D%0AOTg5MGEwNDBlNmEwZDU0MDg4ZTYwNmE1NTdfNDU2MTAvcHJldmlld190YWxrXzMud2VicCIsIm5l%0D%0AZWRSZW1vdmVCYWNrZ3JvdW5kIjpmYWxzZSwia25vd2xlZGdlQmFzZUlkIjoiMDdiZTI3YjliNTcx%0D%0ANDU4OTljZTI2NGM5OWNmZTc3OWIiLCJ1c2VybmFtZSI6IjdlN2M3ZjE0MjZkMzRkNWNiN2YxZmNi%0D%0AMDk3N2ZiYmYwIn0%3D&inIFrame=1",clientWidth=document.body.clientWidth,wrapDiv=document.createElement("div");wrapDiv.id="heygen-streaming-embed";const container=document.createElement("div");container.id="heygen-streaming-container";const stylesheet=document.createElement("style");stylesheet.innerHTML=`\n  #heygen-streaming-embed {\n    z-index: 9999;\n    position: fixed;\n    left: 40px;\n    bottom: 40px;\n    width: 200px;\n    height: 200px;\n    border-radius: 50%;\n    border: 2px solid #fff;\n    box-shadow: 0px 8px 24px 0px rgba(0, 0, 0, 0.12);\n    transition: all linear 0.1s;\n    overflow: hidden;\n    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n    display: flex;\n    align-items: center;\n    justify-content: center;\n\n    opacity: 0;\n    visibility: hidden;\n  }\n  #heygen-streaming-embed::before {\n    content: "👋";\n    font-size: 60px;\n    position: absolute;\n    z-index: 1;\n    opacity: 0.3;\n  }\n  #heygen-streaming-embed.show {\n    opacity: 1;\n    visibility: visible;\n  }\n  #heygen-streaming-embed.expand {\n    ${clientWidth<540?"height: 266px; width: 96%; left: 50%; transform: translateX(-50%);":"height: 366px; width: calc(366px * 16 / 9);"}\n    border: 0;\n    border-radius: 8px;\n  }\n  #heygen-streaming-embed.expand::before {\n    display: none;\n  }\n  #heygen-streaming-container {\n    width: 100%;\n    height: 100%;\n    position: relative;\n    z-index: 2;\n  }\n  #heygen-streaming-container iframe {\n    width: 100%;\n    height: 100%;\n    border: 0;\n  }\n  `;const iframe=document.createElement("iframe");iframe.allowFullscreen=!1,iframe.title="Streaming Embed",iframe.role="dialog",iframe.allow="microphone",iframe.src=url;let visible=!1,initial=!1;window.addEventListener("message",(e=>{e.origin===host&&e.data&&e.data.type&&"streaming-embed"===e.data.type&&("init"===e.data.action?(initial=!0,wrapDiv.classList.toggle("show",initial)):"show"===e.data.action?(visible=!0,wrapDiv.classList.toggle("expand",visible)):"hide"===e.data.action&&(visible=!1,wrapDiv.classList.toggle("expand",visible)))})),container.appendChild(iframe),wrapDiv.appendChild(stylesheet),wrapDiv.appendChild(container),document.body.appendChild(wrapDiv),console.log('✅ Avatar de HeyGen cargado');
