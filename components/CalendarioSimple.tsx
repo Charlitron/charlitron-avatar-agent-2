@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import CalendarioAgenda from './CalendarioAgenda';
+import CancelarCita from './CancelarCita';
 
 const CalendarioSimple: React.FC = () => {
   useEffect(() => {
@@ -61,17 +62,25 @@ const CalendarioSimple: React.FC = () => {
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
+      gap: '40px',
     }}>
-      {/* Contenedor principal centrado */}
+      {/* Contenedor con dos columnas */}
       <div style={{
-        maxWidth: '600px',
+        maxWidth: '1400px',
         width: '100%',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
+        gap: '40px',
       }}>
+        {/* Agendar cita */}
         <CalendarioAgenda 
           onCitaAgendada={() => {
             console.log('✅ Cita agendada exitosamente');
           }}
         />
+        
+        {/* Cancelar cita */}
+        <CancelarCita />
       </div>
 
       {/* El avatar de HeyGen se cargará automáticamente con el script */}

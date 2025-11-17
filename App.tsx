@@ -19,7 +19,6 @@ const App: React.FC = () => {
         </main>
       </div>
       <CalendarioSimple />
-      <IntegrationStatus />
     </div>
   );
 };
