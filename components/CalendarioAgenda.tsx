@@ -34,11 +34,16 @@ export default function CalendarioAgenda({ onCitaAgendada }: CalendarioAgendaPro
 
   // Generar próximos 7 días
   const [diasDisponibles, setDiasDisponibles] = useState<string[]>([])
+  const [fechaMinima, setFechaMinima] = useState<string>('')
 
   useEffect(() => {
     const hoy = new Date()
     const dias: string[] = []
     
+    // Fecha mínima es hoy
+    setFechaMinima(hoy.toISOString().split('T')[0])
+    
+    // Generar próximos 7 días (para fallback)
     for (let i = 0; i < 7; i++) {
       const fecha = new Date(hoy)
       fecha.setDate(hoy.getDate() + i)
@@ -46,10 +51,10 @@ export default function CalendarioAgenda({ onCitaAgendada }: CalendarioAgendaPro
     }
     
     setDiasDisponibles(dias)
-    setFechaSeleccionada(dias[0]) // Seleccionar hoy por defecto
+    setFechaSeleccionada(hoy.toISOString().split('T')[0]) // Seleccionar hoy por defecto
   }, [])
 
-  // Cuando cambia la fecha, consultar disponibilidad
+  // Cuando cambia la fecha o duración, consultar disponibilidad
   useEffect(() => {
     if (!fechaSeleccionada) return
 
@@ -67,13 +72,20 @@ export default function CalendarioAgenda({ onCitaAgendada }: CalendarioAgendaPro
         const resultado = data as DisponibilidadResponse
 
         if (resultado.success) {
-          setDisponibilidad(resultado.disponibles)
+          // Filtrar horarios según duración (no permitir que se salga de 8pm)
+          const horariosValidos = resultado.disponibles.filter(hora => {
+            const horaInicio = parseInt(hora.split(':')[0])
+            return horaInicio + duracion <= 20 // Máximo 8pm
+          })
+          setDisponibilidad(horariosValidos)
         } else {
           console.error('❌ Error al obtener disponibilidad:', resultado.error)
           // Fallback: horarios fijos si falla el API (cada 1 hora)
           const horariosFallback = []
           for (let h = 9; h < 20; h++) {
-            horariosFallback.push(`${h.toString().padStart(2, '0')}:00`)
+            if (h + duracion <= 20) { // Filtrar según duración
+              horariosFallback.push(`${h.toString().padStart(2, '0')}:00`)
+            }
           }
           setDisponibilidad(horariosFallback)
         }
@@ -82,7 +94,9 @@ export default function CalendarioAgenda({ onCitaAgendada }: CalendarioAgendaPro
         // Fallback (cada 1 hora)
         const horariosFallback = []
         for (let h = 9; h < 20; h++) {
-          horariosFallback.push(`${h.toString().padStart(2, '0')}:00`)
+          if (h + duracion <= 20) { // Filtrar según duración
+            horariosFallback.push(`${h.toString().padStart(2, '0')}:00`)
+          }
         }
         setDisponibilidad(horariosFallback)
       } finally {
@@ -91,7 +105,7 @@ export default function CalendarioAgenda({ onCitaAgendada }: CalendarioAgendaPro
     }
 
     consultarDisponibilidad()
-  }, [fechaSeleccionada])
+  }, [fechaSeleccionada, duracion]) // Agregar duracion como dependencia
 
   const agendarCita = async () => {
     if (!nombre || !email || !telefono || !horaSeleccionada) {
@@ -179,31 +193,24 @@ export default function CalendarioAgenda({ onCitaAgendada }: CalendarioAgendaPro
       {/* Selector de Fecha */}
       <div className="mb-6">
         <label className="block text-cyan-300 text-sm font-semibold mb-3">
-          📆 Selecciona el día:
+          📆 Selecciona la fecha:
         </label>
-        <div className="grid grid-cols-4 gap-2">
-          {diasDisponibles.map((dia) => (
-            <button
-              key={dia}
-              onClick={() => setFechaSeleccionada(dia)}
-              className={`
-                px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
-                ${fechaSeleccionada === dia 
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/50 scale-105' 
-                  : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600 hover:scale-105'
-                }
-              `}
-            >
-              {formatearFecha(dia)}
-            </button>
-          ))}
-        </div>
+        <input
+          type="date"
+          value={fechaSeleccionada}
+          onChange={(e) => setFechaSeleccionada(e.target.value)}
+          min={fechaMinima}
+          className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-lg font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all cursor-pointer"
+          style={{
+            colorScheme: 'dark'
+          }}
+        />
       </div>
 
       {/* Selector de Hora */}
       <div className="mb-6">
         <label className="block text-cyan-300 text-sm font-semibold mb-3">
-          ⏰ Horas disponibles:
+          ⏰ Hora de inicio:
         </label>
         
         {cargando ? (
@@ -212,29 +219,22 @@ export default function CalendarioAgenda({ onCitaAgendada }: CalendarioAgendaPro
             <p className="text-slate-400 mt-2 text-sm">Consultando disponibilidad...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto custom-scrollbar">
+          <select
+            value={horaSeleccionada}
+            onChange={(e) => setHoraSeleccionada(e.target.value)}
+            className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-lg font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all cursor-pointer"
+          >
+            <option value="" disabled>Selecciona una hora...</option>
             {disponibilidad.length === 0 ? (
-              <div className="col-span-4 text-center py-4 text-slate-400">
-                No hay horarios disponibles
-              </div>
+              <option value="" disabled>No hay horarios disponibles</option>
             ) : (
               disponibilidad.map((hora) => (
-                <button
-                  key={hora}
-                  onClick={() => setHoraSeleccionada(hora)}
-                  className={`
-                    px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
-                    ${horaSeleccionada === hora
-                      ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/50 scale-105'
-                      : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600 hover:scale-105'
-                    }
-                  `}
-                >
-                  {hora}
-                </button>
+                <option key={hora} value={hora}>
+                  {hora} - {parseInt(hora.split(':')[0]) + duracion}:00 ({duracion}h)
+                </option>
               ))
             )}
-          </div>
+          </select>
         )}
       </div>
 
@@ -303,26 +303,47 @@ export default function CalendarioAgenda({ onCitaAgendada }: CalendarioAgendaPro
           </label>
           <select
             value={duracion}
-            onChange={(e) => setDuracion(Number(e.target.value))}
+            onChange={(e) => {
+              setDuracion(Number(e.target.value))
+              // Resetear hora seleccionada cuando cambia la duración
+              setHoraSeleccionada('')
+            }}
             className="w-full px-4 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 transition-all"
           >
-            <option value={1}>1 hora</option>
-            <option value={2}>2 horas</option>
-            <option value={3}>3 horas</option>
-            <option value={4}>4 horas</option>
-            <option value={5}>5 horas</option>
-            <option value={6}>6 horas</option>
+            <option value={1}>⏰ 1 hora</option>
+            <option value={2}>⏰ 2 horas</option>
+            <option value={3}>⏰ 3 horas</option>
+            <option value={4}>⏰ 4 horas</option>
+            <option value={5}>⏰ 5 horas</option>
+            <option value={6}>⏰ 6 horas</option>
           </select>
+          <p className="text-slate-400 text-xs mt-1">
+            Bloqueo de {duracion === 1 ? '1 hora' : `${duracion} horas`} en el calendario
+          </p>
         </div>
       </div>
 
       {/* Resumen */}
       {horaSeleccionada && (
-        <div className="mb-6 p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
-          <p className="text-cyan-300 text-sm font-semibold mb-1">📋 Resumen de tu cita:</p>
-          <p className="text-white text-sm">
-            {servicio} - {formatearFecha(fechaSeleccionada)} a las {horaSeleccionada}
-          </p>
+        <div className="mb-6 p-4 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-lg backdrop-blur-sm">
+          <p className="text-cyan-300 text-sm font-semibold mb-2">📋 Resumen de tu cita:</p>
+          <div className="space-y-1">
+            <p className="text-white font-medium">{servicio}</p>
+            <p className="text-slate-300 text-sm">
+              📅 {new Date(fechaSeleccionada + 'T00:00:00').toLocaleDateString('es-MX', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </p>
+            <p className="text-slate-300 text-sm">
+              ⏰ {horaSeleccionada} - {parseInt(horaSeleccionada.split(':')[0]) + duracion}:00
+            </p>
+            <p className="text-cyan-400 text-sm font-semibold">
+              ⏱️ Duración: {duracion} {duracion === 1 ? 'hora' : 'horas'}
+            </p>
+          </div>
         </div>
       )}
 
