@@ -6,8 +6,8 @@ import StreamingAvatar, {
   VoiceEmotion 
 } from '@heygen/streaming-avatar';
 
+// Solo necesitamos el token de HeyGen en el frontend
 const HEYGEN_TOKEN = import.meta.env.VITE_HEYGEN_TOKEN || '';
-const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 
 const AvatarSDK: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -42,7 +42,7 @@ const AvatarSDK: React.FC = () => {
       const avatar = new StreamingAvatar({ token: HEYGEN_TOKEN });
       avatarRef.current = avatar;
 
-      // ========== EVENTOS IMPORTANTES ==========
+      // ========== EVENTOS DEL AVATAR ==========
       
       avatar.on(StreamingEvents.AVATAR_START_TALKING, (e) => {
         log('🗣️ Avatar empezó a hablar');
@@ -62,112 +62,130 @@ const AvatarSDK: React.FC = () => {
         setIsConnected(false);
       });
 
-      // ========== ESTE ES EL EVENTO CLAVE ==========
-      avatar.on(StreamingEvents.USER_TALKING, (e) => {
-        log('👂 Usuario hablando...');
-      });
-
-      avatar.on(StreamingEvents.USER_STOP_TALKING, async (e) => {
-        log('🛑 Usuario dejó de hablar');
-        // AQUÍ capturamos lo que dijo el usuario
-        const userMessage = e.detail?.message || e.detail?.text || '';
-        if (userMessage) {
-          log(`👤 Usuario dijo: "${userMessage}"`);
-          await procesarConGemini(userMessage);
+      // ========== ⭐ EVENTO CRÍTICO - Captura lo que dice el usuario ⭐ ==========
+      avatar.on(StreamingEvents.USER_TALKING_MESSAGE, async (message: any) => {
+        log(`📩 [RAW EVENT] ${JSON.stringify(message).substring(0, 300)}`);
+        
+        // Intentar diferentes formas de extraer el texto
+        const textoUsuario = message?.detail || message?.message || message?.text || message;
+        
+        log(`👤 USUARIO DIJO: "${textoUsuario}"`);
+        
+        if (textoUsuario && typeof textoUsuario === 'string' && textoUsuario.length > 0) {
+          await procesarConGemini(textoUsuario);
+        } else {
+          log(`⚠️ Mensaje inválido. Type: ${typeof message}, Value: ${JSON.stringify(message)}`);
         }
       });
 
-      // Iniciar sesión
+      // Eventos adicionales para debug completo
+      avatar.on(StreamingEvents.USER_START, () => {
+        log('👂 [USER_START] Usuario empezó a hablar');
+      });
+
+      avatar.on(StreamingEvents.USER_STOP, () => {
+        log('🛑 [USER_STOP] Usuario terminó de hablar');
+      });
+
+      // Capturar TODOS los eventos para debug
+      const allEvents = Object.values(StreamingEvents);
+      allEvents.forEach((eventName: any) => {
+        avatar.on(eventName, (e: any) => {
+          if (!eventName.includes('AVATAR') && !eventName.includes('STREAM')) {
+            log(`🔔 Evento: ${eventName}`);
+          }
+        });
+      });
+
+      // ========== 1. CREAR SESIÓN (SIN knowledge base) ==========
       log('⏳ Iniciando sesión con HeyGen...');
       const sessionData = await avatar.createStartAvatar({
         quality: AvatarQuality.High,
         avatarName: 'Elenora_IT_Sitting_public',
-        knowledgeBase: '07be27b9b571458999ce264c99cfe779b',
         voice: {
           rate: 1.0,
           emotion: VoiceEmotion.FRIENDLY,
         },
         language: 'es',
         disableIdleTimeout: false,
+        // ❌ NO knowledgeBase
+        // ❌ NO knowledgeId
       });
 
       setSessionId(sessionData.session_id);
       setIsConnected(true);
       log(`✅ Sesión iniciada: ${sessionData.session_id}`);
-      log('🎤 ¡Habla con el avatar ahora!');
+      
+      // ========== 2. ⭐ ACTIVAR VOICE CHAT (ESTO CAPTURA EL AUDIO) ⭐ ==========
+      log('🎤 Activando Voice Chat...');
+      await avatar.startVoiceChat();
+      log('✅ ¡Voice Chat ACTIVADO! Ahora puedes hablar');
+      log('💬 Di algo como: "Hola" o "Quiero agendar una cita"');
 
     } catch (error: any) {
       log(`❌ Error: ${error.message}`);
+      console.error('Error completo:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const procesarConGemini = async (texto: string) => {
-    log('🤖 Procesando con Gemini...');
+    log('🤖 Enviando a Edge Function...');
 
     try {
+      // Llamar a la Edge Function de Supabase (las API keys están protegidas allá)
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_KEY}`,
+        `${SUPABASE_URL}/functions/v1/agendar-cita`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          },
           body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `Analiza si el usuario quiere agendar una cita. Si SÍ, responde JSON: {"agendar":true,"nombre":"...","email":"...","fecha":"2025-11-18","hora":"15:00","servicio":"perifoneo"}. Si NO: {"agendar":false}\n\nUsuario: "${texto}"`
-              }]
-            }]
+            mensaje: texto,
+            userInfo: {} // Aquí puedes agregar info adicional del usuario
           })
         }
       );
 
       const data = await res.json();
-      const respuesta = data.candidates[0].content.parts[0].text;
-      log(`🤖 Gemini: ${respuesta.substring(0, 80)}...`);
+      log(`📨 Respuesta: ${JSON.stringify(data).substring(0, 100)}...`);
 
-      const json = respuesta.match(/\{.*\}/)?.[0];
-      if (json) {
-        const obj = JSON.parse(json);
-        if (obj.agendar) {
-          log('📅 ¡CITA DETECTADA! Guardando...');
-          await guardarCita(obj);
+      if (data.success) {
+        if (data.agendar) {
+          // Es una cita
+          log(`✅ ¡CITA AGENDADA! ${JSON.stringify(data.cita)}`);
+          
+          // Hacer que el avatar confirme
+          if (avatarRef.current && sessionId) {
+            await avatarRef.current.speak({
+              text: data.respuesta,
+              taskType: TaskType.REPEAT,
+              taskMode: 'sync'
+            });
+          }
+          
+          mostrarNotificacion(`✅ Cita agendada correctamente`);
         } else {
-          log('ℹ️ No es solicitud de cita');
+          // Es conversación normal
+          log(`💬 Respuesta conversacional`);
+          
+          if (avatarRef.current && sessionId) {
+            await avatarRef.current.speak({
+              text: data.respuesta,
+              taskType: TaskType.REPEAT,
+              taskMode: 'sync'
+            });
+          }
         }
-      }
-    } catch (err: any) {
-      log(`❌ Error Gemini: ${err.message}`);
-    }
-  };
-
-  const guardarCita = async (datos: any) => {
-    try {
-      const res = await fetch('/api/agendar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datos)
-      });
-
-      if (res.ok) {
-        const result = await res.json();
-        log(`✅ CITA GUARDADA! ${JSON.stringify(result)}`);
-        
-        // Hacer que el avatar confirme
-        if (avatarRef.current && sessionId) {
-          await avatarRef.current.speak({
-            text: `¡Perfecto! He agendado tu cita para el ${datos.fecha} a las ${datos.hora}. Recibirás una confirmación pronto.`,
-            taskType: TaskType.REPEAT,
-            taskMode: 'sync'
-          });
-        }
-        
-        mostrarNotificacion(`✅ Cita: ${datos.fecha} ${datos.hora}`);
       } else {
-        log(`❌ Error API: ${await res.text()}`);
+        log(`❌ Error: ${data.error}`);
       }
     } catch (err: any) {
-      log(`❌ ${err.message}`);
+      log(`❌ Error Edge Function: ${err.message}`);
     }
   };
 
