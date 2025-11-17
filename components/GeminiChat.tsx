@@ -87,11 +87,66 @@ IMPORTANTE:
         };
 
         initGemini();
+
+        // Escuchar mensajes del avatar de HeyGen
+        const handleHeyGenMessage = (event: any) => {
+            const userMessage = event.detail?.message;
+            if (userMessage && chatRef.current) {
+                console.log('🎯 Gemini procesando mensaje del avatar:', userMessage);
+                
+                // Agregar mensaje a la UI
+                setMessages(prev => [...prev, { 
+                    role: 'user', 
+                    text: `[Del Avatar] ${userMessage}` 
+                }]);
+                
+                // Procesar con Gemini para detectar intenciones
+                processMessageSilently(userMessage);
+            }
+        };
+
+        window.addEventListener('heygen-user-message', handleHeyGenMessage);
+
+        return () => {
+            window.removeEventListener('heygen-user-message', handleHeyGenMessage);
+        };
     }, []);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    // Procesar mensaje silenciosamente (sin mostrar en UI, solo detectar funciones)
+    const processMessageSilently = async (userMessage: string) => {
+        if (!chatRef.current) return;
+
+        try {
+            const stream = await chatRef.current.sendMessageStream({ message: userMessage });
+            
+            let functionCalls: any[] = [];
+            
+            for await (const chunk of stream) {
+                if (chunk.functionCalls && chunk.functionCalls.length > 0) {
+                    functionCalls = chunk.functionCalls;
+                }
+            }
+
+            // Si detectó funciones, ejecutarlas
+            if (functionCalls.length > 0) {
+                for (const call of functionCalls) {
+                    console.log('🔔 Función detectada automáticamente:', call.name);
+                    const result = await executeFunctionCall(call);
+                    
+                    setMessages(prev => [...prev, { 
+                        role: 'assistant', 
+                        text: `✅ Acción ejecutada: ${call.name} - ${result.message}` 
+                    }]);
+                }
+            }
+        } catch (error) {
+            console.error('Error procesando mensaje silencioso:', error);
+        }
+    };
 
     const handleSendMessage = async (e?: React.FormEvent) => {
         e?.preventDefault();
