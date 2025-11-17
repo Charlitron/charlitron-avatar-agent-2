@@ -39,6 +39,95 @@
     </script>
     <style>
       #avatar-container {
+        display: none !important;
+      }
+      
+      /* Estilos para el panel de chat de Gemini */
+      #gemini-chat-panel {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 350px;
+        max-height: 500px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        display: flex;
+        flex-direction: column;
+        z-index: 10000;
+        overflow: hidden;
+      }
+      
+      #gemini-chat-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 16px;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      #gemini-chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        max-height: 350px;
+      }
+      
+      .message {
+        margin-bottom: 12px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        max-width: 85%;
+      }
+      
+      .message.user {
+        background: #667eea;
+        color: white;
+        margin-left: auto;
+        text-align: right;
+      }
+      
+      .message.assistant {
+        background: #f3f4f6;
+        color: #1f2937;
+      }
+      
+      #gemini-chat-input-container {
+        border-top: 1px solid #e5e7eb;
+        padding: 12px;
+        display: flex;
+        gap: 8px;
+      }
+      
+      #gemini-chat-input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        outline: none;
+      }
+      
+      #gemini-chat-input:focus {
+        border-color: #667eea;
+      }
+      
+      #gemini-send-btn {
+        padding: 10px 20px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      
+      #gemini-send-btn:hover {
+        background: #5568d3;
+      }
+      
+      #avatar-container {
         z-index: 9999;
         position: fixed;
         left: 40px;
@@ -121,88 +210,18 @@
   }
 }
 </script>
-  <script>
-    // Crear un mock simple de StreamingAvatar mientras se implementa la conexión real
-    window.StreamingAvatarMock = class {
-      constructor(config) {
-        this.config = config;
-        this.eventHandlers = {};
-      }
-      on(event, handler) {
-        this.eventHandlers[event] = handler;
-      }
-      async start(options) {
-        console.log('🎭 Avatar Mock iniciado');
-        
-        // Simular un stream de video con una imagen de avatar
-        const canvas = document.createElement('canvas');
-        canvas.width = 640;
-        canvas.height = 480;
-        const ctx = canvas.getContext('2d');
-        
-        // Dibujar fondo con gradiente
-        const gradient = ctx.createLinearGradient(0, 0, 640, 480);
-        gradient.addColorStop(0, '#667eea');
-        gradient.addColorStop(1, '#764ba2');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 640, 480);
-        
-        // Dibujar círculo para el avatar
-        ctx.beginPath();
-        ctx.arc(320, 200, 80, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
-        
-        // Texto Elena
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 48px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('ELENA', 320, 340);
-        ctx.font = '24px Arial';
-        ctx.fillText('Asistente Virtual', 320, 380);
-        ctx.fillText('¡Habla conmigo!', 320, 420);
-        
-        // Emoji de micrófono
-        ctx.font = '60px Arial';
-        ctx.fillText('🎤', 320, 220);
-        
-        // Convertir canvas a stream
-        const stream = canvas.captureStream(30);
-        
-        // Emitir el evento de stream
-        setTimeout(() => {
-          if (this.eventHandlers['media.stream']) {
-            this.eventHandlers['media.stream'](stream);
-          }
-          if (this.eventHandlers['session.start']) {
-            this.eventHandlers['session.start']();
-          }
-        }, 500);
-      }
-      async stop() {
-        console.log('🛑 Avatar Mock detenido');
-        if (this.eventHandlers['session.close']) {
-          this.eventHandlers['session.close']();
-        }
-      }
-      async speak(options) {
-        console.log('🗣️ Avatar hablaría:', options.text);
-        // Simular que está hablando por unos segundos
-        return new Promise(resolve => {
-          const duration = Math.min(options.text.length * 50, 5000);
-          setTimeout(resolve, duration);
-        });
-      }
-      get state() {
-        return 'ready';
-      }
-    };
-    // Por ahora usamos el mock hasta que HeyGen SDK funcione
-    window.StreamingAvatar = window.StreamingAvatarMock;
-  </script>
+  <!-- Script de HeyGen Avatar personalizado - se ejecuta cuando el DOM esté listo -->
 </head>
   <body class="bg-slate-900">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
+    
+    <!-- Cargar avatar de HeyGen después del DOM -->
+    <script>
+      // Esperar a que el DOM esté completamente cargado
+      window.addEventListener('DOMContentLoaded', function() {
+        !function(window){const host="https://labs.heygen.com",url=host+"/guest/streaming-embed?share=eyJxdWFsaXR5IjoiaGlnaCIsImF2YXRhck5hbWUiOiJFbGVub3JhX0lUX1NpdHRpbmdfcHVibGlj%0D%0AIiwicHJldmlld0ltZyI6Imh0dHBzOi8vZmlsZXMyLmhleWdlbi5haS9hdmF0YXIvdjMvY2JkNGE2%0D%0AOTg5MGEwNDBlNmEwZDU0MDg4ZTYwNmE1NTdfNDU2MTAvcHJldmlld190YWxrXzMud2VicCIsIm5l%0D%0AZWRSZW1vdmVCYWNrZ3JvdW5kIjpmYWxzZSwia25vd2xlZGdlQmFzZUlkIjoiMDdiZTI3YjliNTcx%0D%0ANDU4OTljZTI2NGM5OWNmZTc3OWIiLCJ1c2VybmFtZSI6IjdlN2M3ZjE0MjZkMzRkNWNiN2YxZmNi%0D%0AMDk3N2ZiYmYwIn0%3D&inIFrame=1",clientWidth=document.body.clientWidth,wrapDiv=document.createElement("div");wrapDiv.id="heygen-streaming-embed";const container=document.createElement("div");container.id="heygen-streaming-container";const stylesheet=document.createElement("style");stylesheet.innerHTML=`\n  #heygen-streaming-embed {\n    z-index: 9999;\n    position: fixed;\n    left: 40px;\n    bottom: 40px;\n    width: 200px;\n    height: 200px;\n    border-radius: 50%;\n    border: 2px solid #fff;\n    box-shadow: 0px 8px 24px 0px rgba(0, 0, 0, 0.12);\n    transition: all linear 0.1s;\n    overflow: hidden;\n\n    opacity: 0;\n    visibility: hidden;\n  }\n  #heygen-streaming-embed.show {\n    opacity: 1;\n    visibility: visible;\n  }\n  #heygen-streaming-embed.expand {\n    ${clientWidth<540?"height: 266px; width: 96%; left: 50%; transform: translateX(-50%);":"height: 366px; width: calc(366px * 16 / 9);"}\n    border: 0;\n    border-radius: 8px;\n  }\n  #heygen-streaming-container {\n    width: 100%;\n    height: 100%;\n  }\n  #heygen-streaming-container iframe {\n    width: 100%;\n    height: 100%;\n    border: 0;\n  }\n  `;const iframe=document.createElement("iframe");iframe.allowFullscreen=!1,iframe.title="Streaming Embed",iframe.role="dialog",iframe.allow="microphone",iframe.src=url;let visible=!1,initial=!1;window.addEventListener("message",(e=>{e.origin===host&&e.data&&e.data.type&&"streaming-embed"===e.data.type&&("init"===e.data.action?(initial=!0,wrapDiv.classList.toggle("show",initial)):"show"===e.data.action?(visible=!0,wrapDiv.classList.toggle("expand",visible)):"hide"===e.data.action&&(visible=!1,wrapDiv.classList.toggle("expand",visible)))})),container.appendChild(iframe),wrapDiv.appendChild(stylesheet),wrapDiv.appendChild(container),document.body.appendChild(wrapDiv),console.log('✅ Avatar de HeyGen cargado')}(globalThis);
+      });
+    </script>
   </body>
 </html>
