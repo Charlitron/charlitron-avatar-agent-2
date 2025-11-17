@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+get-google-token.sh
+oauth-helper.html
+oauth-callback.html
+GOOGLE_CALENDAR_SETUP.md
