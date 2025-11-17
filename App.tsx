@@ -3,7 +3,7 @@ import React from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Contact from './components/Contact';
-import TestSimple2 from './components/TestSimple2';
+import CalendarioSimple from './components/CalendarioSimple';
 import IntegrationStatus from './components/IntegrationStatus';
 
 const App: React.FC = () => {
@@ -18,7 +18,7 @@ const App: React.FC = () => {
           <Contact />
         </main>
       </div>
-      <TestSimple2 />
+      <CalendarioSimple />
       <IntegrationStatus />
     </div>
   );

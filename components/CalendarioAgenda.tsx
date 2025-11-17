@@ -116,43 +116,23 @@ export default function CalendarioAgenda({ onCitaAgendada }: CalendarioAgendaPro
     setGuardando(true)
 
     try {
-      // Guardar directamente en Supabase
-      const { data: citaData, error: citaError } = await supabase
-        .from('citas')
-        .insert([{
-          nombre: nombre,
-          email: email,
-          telefono: telefono,
+      // Agendar directamente en Google Calendar + Supabase
+      const { data, error } = await supabase.functions.invoke('agendar-en-google', {
+        body: {
+          nombre,
+          email,
+          telefono,
           fecha: fechaSeleccionada,
           hora: horaSeleccionada,
-          motivo: `${servicio} - ${duracion}h`,
-          duracion: duracion,
-          estado: 'pendiente'
-        }])
-        .select()
-
-      if (citaError) throw citaError
-
-      if (citaData && citaData.length > 0) {
-        // Intentar agendar en Google Calendar (opcional, no bloquea si falla)
-        try {
-          await supabase.functions.invoke('agendar-en-google', {
-            body: {
-              nombre,
-              email,
-              telefono,
-              fecha: fechaSeleccionada,
-              hora: horaSeleccionada,
-              servicio,
-              duracion
-            }
-          })
-          console.log('✅ También agendado en Google Calendar')
-        } catch (googleError) {
-          console.warn('⚠️ No se pudo agendar en Google Calendar (opcional):', googleError)
+          motivo: servicio,
+          duracion
         }
+      })
 
-        alert(`✅ ¡Cita agendada exitosamente!\n${servicio} - ${duracion}h\n${fechaSeleccionada} a las ${horaSeleccionada}`)
+      if (error) throw error
+
+      if (data && data.success) {
+        alert(`✅ ¡Cita agendada exitosamente!\n${servicio} - ${duracion}h\n${fechaSeleccionada} a las ${horaSeleccionada}\n\n📧 Recibirás confirmación por email`)
         
         // Limpiar formulario
         setNombre('')
@@ -163,11 +143,11 @@ export default function CalendarioAgenda({ onCitaAgendada }: CalendarioAgendaPro
         
         onCitaAgendada?.()
       } else {
-        alert('❌ Error: No se pudo guardar la cita')
+        throw new Error(data?.error || 'Error desconocido')
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('❌ Error:', err)
-      alert('Error al agendar cita')
+      alert(`❌ Error al agendar cita: ${err.message || 'Error desconocido'}`)
     } finally {
       setGuardando(false)
     }
