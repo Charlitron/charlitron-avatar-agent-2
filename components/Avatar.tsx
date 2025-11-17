@@ -72,12 +72,14 @@ const Avatar: React.FC = () => {
     const [isInitialized, setIsInitialized] = useState(false);
     const [statusMessage, setStatusMessage] = useState("Iniciando...");
     const [isListening, setIsListening] = useState(false);
+    const [userInput, setUserInput] = useState("");
     
     const avatarRef = useRef<any>(null);
     const mediaStreamRef = useRef<MediaStream | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const chatRef = useRef<Chat | null>(null);
     const recognitionRef = useRef<any>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     // Configurar reconocimiento de voz
     const setupSpeechRecognition = () => {
@@ -468,6 +470,16 @@ INFORMACIÓN DE CHARLITRON:
         }
     };
     
+    // Enviar mensaje por texto
+    const handleSendMessage = (e?: React.FormEvent) => {
+        e?.preventDefault();
+        if (userInput.trim() && chatRef.current) {
+            const message = userInput.trim();
+            setUserInput("");
+            handleAvatarMessage({ type: 'text', text: message });
+        }
+    };
+
     const containerClasses = [
         'show',
         isInitialized ? 'initialized' : '',
@@ -476,12 +488,81 @@ INFORMACIÓN DE CHARLITRON:
     ].join(' ');
 
     return (
-        <div id="avatar-container" className={containerClasses} onClick={handleContainerClick}>
+        <div id="avatar-container" className={containerClasses} onClick={(e) => {
+            // Solo expandir si se hace clic en el contenedor, no en el input
+            if (e.target === e.currentTarget || (e.target as HTMLElement).id === 'avatar-video' || (e.target as HTMLElement).id === 'avatar-overlay') {
+                handleContainerClick();
+            }
+        }}>
             <div id="avatar-overlay">
                 <span>{statusMessage}</span>
                 {isListening && <div style={{marginTop: '10px', fontSize: '2em'}}>🎤</div>}
             </div>
             <video ref={videoRef} autoPlay playsInline muted id="avatar-video" />
+            
+            {isExpanded && isInitialized && (
+                <div style={{
+                    position: 'absolute',
+                    bottom: '10px',
+                    left: '10px',
+                    right: '10px',
+                    display: 'flex',
+                    gap: '8px',
+                    zIndex: 10,
+                    pointerEvents: 'auto'
+                }} onClick={(e) => e.stopPropagation()}>
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        value={userInput}
+                        onChange={(e) => setUserInput(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                        placeholder="Escribe tu mensaje o haz clic en 🎤..."
+                        style={{
+                            flex: 1,
+                            padding: '12px',
+                            borderRadius: '8px',
+                            border: '2px solid #667eea',
+                            fontSize: '14px',
+                            outline: 'none'
+                        }}
+                    />
+                    <button
+                        onClick={handleSendMessage}
+                        style={{
+                            padding: '12px 20px',
+                            background: '#667eea',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold'
+                        }}
+                    >
+                        Enviar
+                    </button>
+                    {recognitionRef.current && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                startListening();
+                            }}
+                            disabled={isListening}
+                            style={{
+                                padding: '12px 20px',
+                                background: isListening ? '#ccc' : '#764ba2',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: isListening ? 'not-allowed' : 'pointer',
+                                fontSize: '18px'
+                            }}
+                        >
+                            {isListening ? '⏸️' : '🎤'}
+                        </button>
+                    )}
+                </div>
+            )}
         </div>
     );
 };
