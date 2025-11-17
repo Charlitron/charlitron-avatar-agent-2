@@ -56,24 +56,24 @@ serve(async (req) => {
 
     const accessToken = tokenData.access_token;
 
-    // Preparar fechas para el evento
+    // Preparar fechas para el evento (con timezone de México)
     const [horaInicio] = hora.split(':');
-    const inicio = new Date(fecha);
-    inicio.setHours(parseInt(horaInicio), 0, 0, 0);
-
-    const fin = new Date(inicio);
-    fin.setHours(inicio.getHours() + (duracion || 1));
+    
+    // Crear la fecha en formato ISO con timezone de México
+    const fechaHoraInicio = `${fecha}T${horaInicio.padStart(2, '0')}:00:00`;
+    const horaFin = parseInt(horaInicio) + (duracion || 1);
+    const fechaHoraFin = `${fecha}T${horaFin.toString().padStart(2, '0')}:00:00`;
 
     // Crear evento en Google Calendar
     const evento = {
       summary: `${motivo} - ${nombre}`,
       description: `Cliente: ${nombre}\nEmail: ${email}\nTeléfono: ${telefono || 'No proporcionado'}\nServicio: ${motivo}\nDuración: ${duracion || 1}h`,
       start: {
-        dateTime: inicio.toISOString(),
+        dateTime: fechaHoraInicio,
         timeZone: 'America/Mexico_City',
       },
       end: {
-        dateTime: fin.toISOString(),
+        dateTime: fechaHoraFin,
         timeZone: 'America/Mexico_City',
       },
       attendees: [
