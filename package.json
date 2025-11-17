@@ -12,7 +12,8 @@
     "react": "^19.2.0",
     "@google/genai": "latest",
     "react-dom": "^19.2.0",
-    "@supabase/supabase-js": "^2.39.0"
+    "@supabase/supabase-js": "^2.39.0",
+    "@heygen/streaming-avatar": "^1.0.10"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

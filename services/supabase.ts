@@ -16,13 +16,13 @@ class SupabaseService {
   private client: SupabaseClient | null = null;
 
   constructor() {
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
     if (supabaseUrl && supabaseKey) {
       this.client = createClient(supabaseUrl, supabaseKey);
     } else {
-      console.warn('⚠️ Supabase no configurado. Verifica SUPABASE_URL y SUPABASE_ANON_KEY en .env.local');
+      console.warn('⚠️ Supabase no configurado. Verifica VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en .env.local');
     }
   }
 
