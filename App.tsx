@@ -4,6 +4,7 @@ import Header from './components/Header';
 import Hero from './components/Hero';
 import Contact from './components/Contact';
 import CalendarioSimple from './components/CalendarioSimple';
+import ChatAsistente from './components/ChatAsistente';
 import IntegrationStatus from './components/IntegrationStatus';
 
 const App: React.FC = () => {
@@ -19,6 +20,7 @@ const App: React.FC = () => {
         </main>
       </div>
       <CalendarioSimple />
+      <ChatAsistente />
     </div>
   );
 };
