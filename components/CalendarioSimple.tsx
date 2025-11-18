@@ -60,6 +60,7 @@ const CalendarioSimple: React.FC = () => {
       background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
       padding: '40px 20px',
       display: 'flex',
+      flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
       gap: '40px',
@@ -81,6 +82,35 @@ const CalendarioSimple: React.FC = () => {
         
         {/* Cancelar cita */}
         <CancelarCita />
+      </div>
+
+      {/* Botón Cotizador - Ahora abajo */}
+      <div style={{ 
+        position: 'relative',
+        zIndex: 10,
+        marginTop: '20px'
+      }}>
+        <a
+          href="https://charlitron-service-quotation-580428014061.us-west1.run.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'inline-block',
+            padding: '20px 50px',
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            color: 'white',
+            fontSize: '20px',
+            fontWeight: 'bold',
+            borderRadius: '16px',
+            textDecoration: 'none',
+            boxShadow: '0 10px 30px rgba(16, 185, 129, 0.4)',
+            border: '3px solid rgba(255, 255, 255, 0.3)',
+            cursor: 'pointer',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+          }}
+        >
+          💰 Ir al Cotizador de Servicios
+        </a>
       </div>
 
       {/* El avatar de HeyGen se cargará automáticamente con el script */}
