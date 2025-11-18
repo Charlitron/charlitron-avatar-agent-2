@@ -16,7 +16,7 @@ export default function ChatAsistente() {
   const [mensajes, setMensajes] = useState<Mensaje[]>([
     {
       rol: 'asistente',
-      texto: '¡Hola! Soy tu asistente virtual. Puedo ayudarte a:\n\n📅 Consultar disponibilidad\n✅ Agendar citas\n❌ Cancelar citas\n\n¿En qué puedo ayudarte?',
+      texto: '¡Hola! Soy tu asistente virtual de Charlitron Agencia 360. Puedo ayudarte a:\n\n📅 Consultar disponibilidad de citas\n✅ Agendar citas para servicios\n❌ Cancelar citas existentes\n\n💰 Si deseas cotizar un servicio, puedes:\n- Usar el botón "Cotizador de Servicios" abajo\n- Contactar directamente por WhatsApp para atención personalizada\n\n¿En qué puedo ayudarte?',
       timestamp: new Date()
     }
   ])
@@ -69,6 +69,7 @@ IMPORTANTE:
 - Convierte SIEMPRE la fecha a formato YYYY-MM-DD (año actual: 2025)
 - El TELÉFONO es OBLIGATORIO para agendar (10 dígitos)
 - Si falta el teléfono, NO intentes agendar, pide el dato
+- Si el usuario pregunta por cotización o presupuesto, dile: "Para cotizaciones personalizadas, usa el botón 'Cotizador de Servicios' abajo o contacta por WhatsApp para atención directa con un humano"
 
 Responde en formato JSON EXACTO:
 {
