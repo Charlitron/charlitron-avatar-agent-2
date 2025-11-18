@@ -58,20 +58,20 @@ const CalendarioSimple: React.FC = () => {
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-      padding: '40px 20px',
+      padding: '20px 10px',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
-      gap: '40px',
+      gap: '20px',
     }}>
       {/* Contenedor con dos columnas */}
       <div style={{
         maxWidth: '1400px',
         width: '100%',
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-        gap: '40px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 350px), 1fr))',
+        gap: '20px',
       }}>
         {/* Agendar cita */}
         <CalendarioAgenda 
@@ -88,18 +88,22 @@ const CalendarioSimple: React.FC = () => {
       <div style={{ 
         position: 'relative',
         zIndex: 10,
-        marginTop: '20px'
+        marginTop: '20px',
+        width: '100%',
+        maxWidth: '500px',
+        padding: '0 10px'
       }}>
         <a
           href="https://charlitron-service-quotation-580428014061.us-west1.run.app/"
           target="_blank"
           rel="noopener noreferrer"
           style={{
-            display: 'inline-block',
-            padding: '20px 50px',
+            display: 'block',
+            textAlign: 'center',
+            padding: '16px 30px',
             background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
             color: 'white',
-            fontSize: '20px',
+            fontSize: '18px',
             fontWeight: 'bold',
             borderRadius: '16px',
             textDecoration: 'none',
